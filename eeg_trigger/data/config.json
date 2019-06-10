@@ -1,0 +1,8 @@
+{
+  "ssid":"Mindstrong EEG",
+  "passwd":"ForEEGMindstrong!",
+  "pulseMicros":10000,
+  "logicOn":1,
+  "analogOut":0,
+  "touchThresh":40
+}
