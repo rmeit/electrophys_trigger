@@ -326,6 +326,7 @@ void pulseOut(byte b) {
   // Simple delay. We could use a timer and mke this non-blocking, but
   // we don't want overlapping pulses, so blocking here is ok.
   delayMicroseconds(g_pulseMicros);
+  writeByte(0);
   digitalWrite(LED_PIN, LOW);
 }
 
@@ -376,4 +377,3 @@ void heartbeat(uint8_t num_blinks){
     }
   }
 }
-

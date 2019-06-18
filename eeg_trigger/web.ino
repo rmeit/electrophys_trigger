@@ -72,6 +72,7 @@ void handleGetTimestamp() {
   //String resp = (String)"{\"timestamp\":" + g_unix_epoch_ms + "}";
   String resp = (String)"{\"timestamp\":" + (uint32_t)(g_unix_epoch_ms/1000L) + "." + (uint32_t)(g_unix_epoch_ms%1000L) + "}";
   server->send(100, "application/json", resp);
+  Serial << "Getting timestamp" << endl;
 }
 
 void handlePostTimestamp() {
@@ -79,9 +80,10 @@ void handlePostTimestamp() {
   // Get the current unix time for the trigger device (me)
   // Send the pulse out asap
   // Write the log with the two timestamps
+  server->sendHeader("Access-Control-Allow-Origin","*");
   g_unix_epoch_ms = timeClient.getEpochTimeMillisUTC();
   String buffer = server->arg("plain");
-  DynamicJsonDocument doc(buffer.length()+1);
+  DynamicJsonDocument doc(128);
   DeserializationError error = deserializeJson(doc, buffer);
   if (error) {
     Serial << "POST timestamp: error parsing json body. Error code: " << error.c_str() << endl;
@@ -91,6 +93,9 @@ void handlePostTimestamp() {
 
   // TODO: time the lag here. Parsing JSON might take some time!
   uint64_t ts = doc["timestamp"];
+  String tstring = String((uint32_t)(ts)) + "," + String((uint32_t)(g_unix_epoch_ms/1000)) + "." + String((uint32_t)(g_unix_epoch_ms)) + "\n";
+  appendToLog(tstring);
+  Serial << "Posting timestamp" << endl;
   pulseOut((byte)(ts % 255 + 1));
   //server->sendHeader("Location", (String)"/v1/timestamp/");
   //resp = send_timestamp((int)jsonBody["timestamp"])
@@ -248,6 +253,16 @@ bool saveConfig() {
   return true;
 }
 
+bool appendToLog(String msg){
+  File logFile = SPIFFS.open("/log.csv", "a");
+  if (!logFile) {
+    Serial.println("Failed to open config file for writing");
+    return false;
+  }
+  logFile.print(msg);
+  return true;
+}
+
 bool loadFromSpiffs(String path){
   String dataType = "text/plain";
   if(path.endsWith("/")) path += "index.htm";
@@ -326,6 +341,12 @@ bool configMode(){
 
 bool startServer(){
   server.reset(new WebServer(80));
+  server->on("/timestamp", HTTP_OPTIONS, []() {
+    server->sendHeader("Access-Control-Max-Age", "10000");
+    server->sendHeader("Access-Control-Allow-Methods", "POST,GET,OPTIONS");
+    server->sendHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    server->send(200, "application/json", "" );
+  });
   server->on("/", HTTP_GET, handleRoot);
   server->on("/config", HTTP_GET, handleGetConfig);
   server->on("/config", HTTP_POST, handlePostConfig);
@@ -345,5 +366,3 @@ bool startServer(){
   server->begin();
   Serial << "Server started..." << endl;
 }
-
-
