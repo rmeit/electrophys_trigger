@@ -109,9 +109,10 @@ void handleGetLog() {
   server->send(100, "application/json", resp);
 }
 
-void handlePostLog() {
+void handleDeleteLog() {
   // WORK HERE
   // Rotate the logfile. I.e., delete it and start a new one.
+  SPIFFS.remove("/log.csv");
   server->send(201);
 }
 
@@ -353,7 +354,7 @@ bool startServer(){
   server->on("/timestamp", HTTP_GET, handleGetTimestamp);
   server->on("/timestamp", HTTP_POST, handlePostTimestamp);
   server->on("/log", HTTP_GET, handleGetLog);
-  server->on("/log", HTTP_POST, handlePostLog);
+  server->on("/log", HTTP_DELETE, handleDeleteLog);
   server->on("/event", HTTP_POST, handlePostEvent);
   server->on("/inline", HTTP_GET, [](){
     server->send(200, "text/html", "inline example");
