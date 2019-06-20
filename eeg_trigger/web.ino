@@ -93,7 +93,11 @@ void handlePostTimestamp() {
 
   // TODO: time the lag here. Parsing JSON might take some time!
   uint64_t ts = doc["timestamp"];
-  String tstring = String((uint32_t)(ts/1000)) + "." + String((uint32_t)(g_unix_epoch_ms%1000)) + "," + String((uint32_t)(g_unix_epoch_ms/1000)) + "." + String((uint32_t)(g_unix_epoch_ms%1000)) + "\n";
+  int32_t net_delay = doc["netdelay"] | -1;
+  String tstring = String((uint32_t)(ts/1000)) + "." + String((uint32_t)(ts%1000)) + "," 
+                 + String((uint32_t)(g_unix_epoch_ms/1000)) + "." + String((uint32_t)(g_unix_epoch_ms%1000)) + ","
+                 + String(net_delay)
+                 + "\n";
   appendToLog(tstring);
   Serial << "Posting timestamp" << endl;
   pulseOut((byte)(ts % 255 + 1));
