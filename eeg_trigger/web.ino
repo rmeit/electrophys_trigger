@@ -93,10 +93,12 @@ void handlePostTimestamp() {
 
   // TODO: time the lag here. Parsing JSON might take some time!
   uint64_t ts = doc["timestamp"];
+  String message = doc["misc"];
   int32_t net_delay = doc["netdelay"] | -1;
   String tstring = String((uint32_t)(ts/1000)) + "." + String((uint32_t)(ts%1000)) + "," 
                  + String((uint32_t)(g_unix_epoch_ms/1000)) + "." + String((uint32_t)(g_unix_epoch_ms%1000)) + ","
-                 + String(net_delay)
+                 + String(net_delay) + ","
+                 + message
                  + "\n";
   appendToLog(tstring);
   Serial << "Posting timestamp" << endl;
@@ -116,6 +118,7 @@ void handleGetLog() {
 void handleDeleteLog() {
   // WORK HERE
   // Rotate the logfile. I.e., delete it and start a new one.
+  // curl 
   SPIFFS.remove("/log.csv");
   server->send(201);
 }

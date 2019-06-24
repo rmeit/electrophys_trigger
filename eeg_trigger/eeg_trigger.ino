@@ -188,7 +188,7 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial << ".";
-    if(ntries > 10) {
+    if(ntries > 30) {
       Serial << "timeout. Going into AP mode..." << endl;
       if(configMode())
         Serial << "Config success!" << endl;
