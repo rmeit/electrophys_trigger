@@ -83,7 +83,7 @@ void handlePostTimestamp() {
   server->sendHeader("Access-Control-Allow-Origin","*");
   g_unix_epoch_ms = timeClient.getEpochTimeMillisUTC();
   String buffer = server->arg("plain");
-  DynamicJsonDocument doc(128);
+  DynamicJsonDocument doc(256);
   DeserializationError error = deserializeJson(doc, buffer);
   if (error) {
     Serial << "POST timestamp: error parsing json body. Error code: " << error.c_str() << endl;
