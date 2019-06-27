@@ -93,16 +93,19 @@ void handlePostTimestamp() {
 
   // TODO: time the lag here. Parsing JSON might take some time!
   uint64_t ts = doc["timestamp"];
+  pulseOut((byte)(ts % 255 + 1));
+
   String message = doc["misc"];
+  String user = doc["user"];
   int32_t net_delay = doc["netdelay"] | -1;
   String tstring = String((uint32_t)(ts/1000)) + "." + String((uint32_t)(ts%1000)) + "," 
                  + String((uint32_t)(g_unix_epoch_ms/1000)) + "." + String((uint32_t)(g_unix_epoch_ms%1000)) + ","
                  + String(net_delay) + ","
-                 + message
+                 + message + ","
+                 + user 
                  + "\n";
   appendToLog(tstring);
   Serial << "Posting timestamp" << endl;
-  pulseOut((byte)(ts % 255 + 1));
   //server->sendHeader("Location", (String)"/v1/timestamp/");
   //resp = send_timestamp((int)jsonBody["timestamp"])
   server->send(201);
@@ -128,7 +131,7 @@ void handlePostEvent() {
   // Ingest an event from the phone
   g_unix_epoch_ms = timeClient.getEpochTimeMillisUTC();
   String buffer = server->arg("plain");
-  DynamicJsonDocument doc(buffer.length()+1);
+  DynamicJsonDocument doc(512);
   DeserializationError error = deserializeJson(doc, buffer);
   if (error) {
     Serial << "POST event: error parsing json body. Error code: " << error.c_str() << endl;
@@ -136,29 +139,62 @@ void handlePostEvent() {
     return;
   }
   uint64_t upload_ts = doc["timestamp"];
-  uint64_t event_ts;
-  String event_str = doc["event"];
-  int cnt, idx=-1;
-  while(cnt<6) {
-    idx = event_str.indexOf("\t", idx+1);
+  uint32_t net_delay = doc["last_roundtrip_ms"] | -1;
+  String message = "event";
+  uint64_t event_ts = 0;
+  String uid;
+  char* event_str = doc["event"];
+//  String event_str = doc["event"];
+  int uid_idx, ts_idx=-1;
+  int tokend, idx;
+  
+  for(int c[nt=0; cnt<7; cnt++) {
+    idx = event_str.indexOf("\t", idx+1); //CONVERT EVENT STR TO C STRING AND TOKENIZE ON TABS
     if(idx > -1)
-      cnt++;
+      if(cnt==2) uid_idx = idx;
+      else if(cnt==6) ts_idx = idx;
     else
       break;
   }
-  if(cnt==6) {
-    idx++; // Skip the \t
-    int tokend = event_str.indexOf("\t", idx); // Find the next \t (the end of the timestamp token)
+  if(ts_idx != -1) {
+    ts_idx++; // Skip the \t //CONVERT EVENT STR TO C STRING AND TOKENIZE
+    tokend = event_str.indexOf("\t", ts_idx); // Find the next \t (the end of the timestamp token)
     if(tokend > -1) { // If tokend is a valid index, then we've found an intact timestamp!
       // String.toInt can only convert long, not int64 (long long). So we need to use atoll.
-      event_ts = atoll(event_str.substring(idx, tokend).c_str());
-    } else {
+      event_ts = atoll(event_str.substring(ts_idx, tokend).c_str());
+      Serial << event_str.substring(ts_idx, tokend) << endl;
+    } 
+  }
+  if (event_ts==0) {
       Serial << "POST event: error parsing event_ts from '" << event_str << "'" << endl;
       server->send(400);
       return;
-    }
   }
+  
+  if(uid_idx != -1) {
+    uid_idx++;
+    tokend = event_str.indexOf("\t", uid_idx); //TAB TAB TAB
+    if(tokend > -1) {
+      uid = event_str.substring(uid_idx, tokend);
+    } else {
+      Serial << "POST event: error parsing uid end from '" << event_str << "'" << endl;
+    }
+  } else {
+      Serial << "POST event: error parsing uid start from '" << event_str << "'" << endl;
+  }
+
+
   pulseOut((byte)(event_ts % 255 + 1));
+  String tstring = String((uint32_t)(event_ts/1000)) + "." + String((uint32_t)(event_ts%1000)) + "," 
+                 + String(( uint32_t)(g_unix_epoch_ms/1000)) + "." + String((uint32_t)(g_unix_epoch_ms%1000)) + ","
+                 + String(net_delay) + ","
+                 + message + ","
+                 + uid
+                 + "\n";
+  appendToLog(tstring);
+  Serial << tstring << endl;
+  Serial << event_str << endl;
+  Serial << "Posting event" << endl;
   //server->sendHeader("Location", (String)"/v1/timestamp/");
   //resp = send_timestamp((int)jsonBody["timestamp"])
   server->send(201);

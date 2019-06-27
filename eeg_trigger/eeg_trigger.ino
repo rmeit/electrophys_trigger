@@ -30,6 +30,8 @@
 // pin 5: ground
 // pins 6-9: bits 4-7
 
+#include <stdio.h>
+#include <string.h>
 #include <FS.h>
 // https://github.com/bblanchon/ArduinoJson
 // see https://github.com/bblanchon/ArduinoJson/issues/578
