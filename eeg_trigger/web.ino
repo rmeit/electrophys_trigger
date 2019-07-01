@@ -143,12 +143,12 @@ void handlePostEvent() {
   String message = "event";
   uint64_t event_ts = 0;
   String uid;
-  char* event_str = doc["event"];
-//  String event_str = doc["event"];
+//  char* event_str = doc["event"];
+  String event_str = doc["event"];
   int uid_idx, ts_idx=-1;
   int tokend, idx;
   
-  for(int c[nt=0; cnt<7; cnt++) {
+  for(int cnt=0; cnt<7; cnt++) {
     idx = event_str.indexOf("\t", idx+1); //CONVERT EVENT STR TO C STRING AND TOKENIZE ON TABS
     if(idx > -1)
       if(cnt==2) uid_idx = idx;
