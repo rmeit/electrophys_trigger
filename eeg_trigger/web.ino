@@ -127,11 +127,11 @@ void handleDeleteLog() {
 }
 
 void handlePostEvent() {
-  // WORK HERE
   // Ingest an event from the phone
+  unsigned long start_micros = micros();
   g_unix_epoch_ms = timeClient.getEpochTimeMillisUTC();
   String buffer = server->arg("plain");
-  DynamicJsonDocument doc(512);
+  StaticJsonDocument<512> doc;
   DeserializationError error = deserializeJson(doc, buffer);
   if (error) {
     Serial << "POST event: error parsing json body. Error code: " << error.c_str() << endl;
@@ -139,66 +139,137 @@ void handlePostEvent() {
     return;
   }
   uint64_t upload_ts = doc["timestamp"];
-  uint32_t net_delay = doc["last_roundtrip_ms"] | -1;
-  String message = "event";
   uint64_t event_ts = 0;
-  String uid;
-//  char* event_str = doc["event"];
-  String event_str = doc["event"];
-  int uid_idx, ts_idx=-1;
-  int tokend, idx;
-  
-  for(int cnt=0; cnt<7; cnt++) {
-    idx = event_str.indexOf("\t", idx+1); //CONVERT EVENT STR TO C STRING AND TOKENIZE ON TABS
-    if(idx > -1)
-      if(cnt==2) uid_idx = idx;
-      else if(cnt==6) ts_idx = idx;
-    else
-      break;
+  const char* event_str = doc["event"];
+  Serial << "POST event: '" << event_str << "'" << endl;
+  uint32_t net_delay = doc["last_roundtrip_ms"] | -1;
+  char *token,*uid,*ts;
+  const char del = '\t';
+  int idx = -1;
+  token = strtok((char *)event_str, &del);
+  while( token != NULL ) {
+    idx++;
+    if(idx==2){
+      uid = token;
+    } else if(idx==6) {
+      ts = token;
+    }
+    Serial.println(idx);
+    Serial.println(token);
+    token = strtok(NULL, &del);
   }
-  if(ts_idx != -1) {
-    ts_idx++; // Skip the \t //CONVERT EVENT STR TO C STRING AND TOKENIZE
-    tokend = event_str.indexOf("\t", ts_idx); // Find the next \t (the end of the timestamp token)
-    if(tokend > -1) { // If tokend is a valid index, then we've found an intact timestamp!
-      // String.toInt can only convert long, not int64 (long long). So we need to use atoll.
-      event_ts = atoll(event_str.substring(ts_idx, tokend).c_str());
-      Serial << event_str.substring(ts_idx, tokend) << endl;
-    } 
-  }
+  //Serial.println(ts);
+  event_ts = atoll(ts);
+
   if (event_ts==0) {
       Serial << "POST event: error parsing event_ts from '" << event_str << "'" << endl;
       server->send(400);
       return;
   }
   
-  if(uid_idx != -1) {
-    uid_idx++;
-    tokend = event_str.indexOf("\t", uid_idx); //TAB TAB TAB
-    if(tokend > -1) {
-      uid = event_str.substring(uid_idx, tokend);
-    } else {
-      Serial << "POST event: error parsing uid end from '" << event_str << "'" << endl;
-    }
-  } else {
-      Serial << "POST event: error parsing uid start from '" << event_str << "'" << endl;
-  }
-
-
   pulseOut((byte)(event_ts % 255 + 1));
+  start_micros = micros() - start_micros;
   String tstring = String((uint32_t)(event_ts/1000)) + "." + String((uint32_t)(event_ts%1000)) + "," 
                  + String(( uint32_t)(g_unix_epoch_ms/1000)) + "." + String((uint32_t)(g_unix_epoch_ms%1000)) + ","
                  + String(net_delay) + ","
-                 + message + ","
+                 + "event,"
                  + uid
                  + "\n";
   appendToLog(tstring);
-  Serial << tstring << endl;
-  Serial << event_str << endl;
-  Serial << "Posting event" << endl;
+  Serial << "Posting event (pulseOut delay = " << start_micros << "us)" << endl << tstring << endl << event_str << endl << endl;
   //server->sendHeader("Location", (String)"/v1/timestamp/");
   //resp = send_timestamp((int)jsonBody["timestamp"])
   server->send(201);
 }
+
+//void handlePostEvent() {
+//  // old handlePostEvent()
+//  // Ingest an event from the phone
+//  g_unix_epoch_ms = timeClient.getEpochTimeMillisUTC();
+//  String buffer = server->arg("plain");
+//  DynamicJsonDocument doc(512);
+//  DeserializationError error = deserializeJson(doc, buffer);
+//  if (error) {
+//    Serial << "POST event: error parsing json body. Error code: " << error.c_str() << endl;
+//    server->send(400);
+//    return;
+//  }
+//  uint64_t upload_ts = doc["timestamp"];
+//  uint32_t net_delay = doc["last_roundtrip_ms"] | -1;
+//  String message = "event";
+//  uint64_t event_ts = 0;
+//  String uid;
+//  String event_str = doc["event"];
+//  int uid_idx, ts_idx=-1;
+//  int tokend, idx;
+//
+////  int tabs [6] = {};
+////  int tab_pos = 0;
+////  for(int event_str_pos=0; event_str_pos_str.size(); event_str_pos++) {
+////    if(event_str[event_str_pos]="\t"){
+////      tabs [tab_pos] = event_str_pos;
+//// 
+////      if(tab_pos==2) {
+////        uid_idx = event_str_pos;
+////        Serial << "found uid!!!" << endl;
+////      } else if (tab_pos==6) {
+////        ts_idx = event_str_pos;
+////        Serial << "found ts!!!" << endl;
+////      }
+////    }
+////  }
+//
+//  for(int cnt=0; cnt<7; cnt++) {
+//    idx = event_str.indexOf("\t", idx+1); //CONVERT EVENT STR TO C STRING AND TOKENIZE ON TABS
+//    if(idx > -1)
+//      if(cnt==2) uid_idx = idx;
+//      else if(cnt==6) ts_idx = idx;
+//    else
+//      break;
+//  }
+//  if(ts_idx != -1) {
+//    ts_idx++; // Skip the \t //CONVERT EVENT STR TO C STRING AND TOKENIZE
+//    tokend = event_str.indexOf("\t", ts_idx); // Find the next \t (the end of the timestamp token)
+//    if(tokend > -1) { // If tokend is a valid index, then we've found an intact timestamp!
+//      // String.toInt can only convert long, not int64 (long long). So we need to use atoll.
+//      event_ts = atoll(event_str.substring(ts_idx, tokend).c_str());
+//      Serial << event_str.substring(ts_idx, tokend) << endl;
+//    } 
+//  }
+//  if (event_ts==0) {
+//      Serial << "POST event: error parsing event_ts from '" << event_str << "'" << endl;
+//      server->send(400);
+//      return;
+//  }
+//  
+//  if(uid_idx != -1) {
+//    uid_idx++;
+//    tokend = event_str.indexOf("\t", uid_idx); //TAB TAB TAB
+//    if(tokend > -1) {
+//      uid = event_str.substring(uid_idx, tokend);
+//    } else {
+//      Serial << "POST event: error parsing uid end from '" << event_str << "'" << endl;
+//    }
+//  } else {
+//      Serial << "POST event: error parsing uid start from '" << event_str << "'" << endl;
+//  }
+//
+//
+//  pulseOut((byte)(event_ts % 255 + 1));
+//  String tstring = String((uint32_t)(event_ts/1000)) + "." + String((uint32_t)(event_ts%1000)) + "," 
+//                 + String(( uint32_t)(g_unix_epoch_ms/1000)) + "." + String((uint32_t)(g_unix_epoch_ms%1000)) + ","
+//                 + String(net_delay) + ","
+//                 + message + ","
+//                 + uid
+//                 + "\n";
+//  appendToLog(tstring);
+//  Serial << tstring << endl;
+//  Serial << event_str << endl;
+//  Serial << "Posting event" << endl;
+//  //server->sendHeader("Location", (String)"/v1/timestamp/");
+//  //resp = send_timestamp((int)jsonBody["timestamp"])
+//  server->send(201);
+//}
 
 void handleGetConfig() {
   if (SPIFFS.exists("/config.json")) {

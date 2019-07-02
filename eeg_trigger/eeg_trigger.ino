@@ -155,7 +155,7 @@ void setup() {
   digitalWrite(LED_PIN, LOW);
 
   Serial << "Mounting FS... ";
-  //SPIFFS.format(); // erase filesystem, for testing...
+//  SPIFFS.format(); // erase filesystem, for testing...
   if (!SPIFFS.begin()) {
     Serial << "failed to mount file system." << endl;
   } else {
