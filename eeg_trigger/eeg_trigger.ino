@@ -19,8 +19,6 @@
  * 3.8V – 30%
  * 3.5V – <15% (minimum recommended)
  *
- * To flash the TTGO board with the sd card slot, select the "ESP32 Dev Module" board. 
- * Then set flash mode to DIO, flash freq to 40MHz, and the upload speed at 115200
  */
 
 // Current pinout (standard male db9 pin numbers, left to right, 1-5 in the top row, 6-9 in bottom)
@@ -43,7 +41,6 @@
 #include <ArduinoJson.h>
 #include <SPIFFS.h>
 #include <Streaming.h>
-#include <string.h>
 
 #include <WiFi.h>
 #include <WebServer.h>
@@ -160,14 +157,7 @@ void setup() {
   Serial << "Mounting FS... ";
   //SPIFFS.format(); // erase filesystem, for testing...
   if (!SPIFFS.begin()) {
-    Serial << "failed to mount file system. Will try to reformat the SPIFFS in 30 seconds..." << endl;
-    delay(30000);
-    SPIFFS.format();
-    if (!SPIFFS.begin()) {
-      Serial << "failed to mount file system." << endl;
-    } else {
-      Serial << "successfully mounted." << endl;
-    }
+    Serial << "failed to mount file system." << endl;
   } else {
     Serial << "successfully mounted." << endl;
   }
