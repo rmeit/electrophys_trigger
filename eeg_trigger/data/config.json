@@ -1,7 +1,7 @@
 {
-  "ssid":"NETGEAR36",
-  "passwd":"newonion402",
-  "pulseMicros":10000,
+  "ssid":"EEG",
+  "passwd":"ForEEGMindstrong!",
+  "pulseMicros":20000,
   "logicOn":1,
   "analogOut":0,
   "touchThresh":40

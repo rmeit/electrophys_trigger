@@ -19,7 +19,7 @@
  * 3.8V – 30%
  * 3.5V – <15% (minimum recommended)
  *
- * To flash the TTGO board with the sd card slot, select the "ESP32 Dev Module" board. 
+ * To flash the TTGO board with the sd card slot, select the "ESP32 Wrover Module" board. 
  * Then set flash mode to DIO, flash freq to 40MHz, and the upload speed at 115200
  */
 
@@ -305,7 +305,9 @@ void loop() {
     // Start the server
     startServer();
   }
-
+  // It's safe to call this frequently, since it will be a noop most of the time and will only
+  // do a real update if the specified NTP update interval has passed.
+  timeClient.update();
   heartbeat(1);
   delay(5);
 }
