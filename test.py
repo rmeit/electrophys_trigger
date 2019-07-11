@@ -5,10 +5,11 @@ import json
 import threading
 from queue import Queue
 
-url = "http://192.168.31.33/timestamp"
+url = "http://192.168.31.28/timestamp"
 
-interval = 0.5
+interval = 0.75
 rt_delay = -1
+n = 255 * 10
 #ser = serial.Serial('/dev/tty.SLAB_USBtoUART', 115200, timeout=1)
 
 q = Queue()
@@ -26,8 +27,10 @@ def post_url(url, body):
 
 
 delays = []
-while True:
-    body = {'timestamp': int(round(time.time()*1000)), 'delay':rt_delay}
+ts = 0
+for i in range(n):
+    #body = {'timestamp': int(round(time.time()*1000)), 'delay':rtdelay}
+    body = {'timestamp': ts, 'delay':rt_delay}
 
     start = time.time()
     thread = threading.Thread(target=post_url, args=(url,body))
@@ -41,4 +44,8 @@ while True:
     time.sleep(interval)
     if q.qsize() > 0:
         print(q.queue[-1])
+
+    ts += 1
+
+thread.join()
 
