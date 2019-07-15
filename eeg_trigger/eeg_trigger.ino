@@ -61,7 +61,7 @@ const char* g_hostname = "eeg";
 const float BAT_SCALE = 139;
 
 const long NTP_OFFSET = -8 * 60 * 60; // Pacific Standard Time (USA)
-const long NTP_INTERVAL = 1 * 60 * 1000; // In milliseconds
+const long NTP_INTERVAL = 2 * 60 * 60 * 1000; // In milliseconds
 static const char NTP_ADDRESS[] = "us.pool.ntp.org";
 
 /*
